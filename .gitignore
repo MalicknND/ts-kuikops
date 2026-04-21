@@ -1,0 +1,24 @@
+# Dependances Node
+node_modules/
+
+# Sorties de build
+build/
+dist/
+out/
+coverage/
+
+# Caches TypeScript
+*.tsbuildinfo
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Fichiers systeme macOS
+.DS_Store
+
+# Dossiers IDE facultatifs
+.idea/
