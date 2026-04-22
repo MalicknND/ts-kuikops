@@ -9,6 +9,7 @@ function addContainerListerner(currentContainer) {
     addItemBtnListeners(currentAddItemBtn);
     closingFormBtnListeners(currentCloseFormBtn);
     addFormSubmitListeners(currentForm);
+    addDDlisteners(currentContainer);
 }
 itemsContainer.forEach((container) => {
     addContainerListerner(container);
@@ -24,6 +25,12 @@ function closingFormBtnListeners(closeFormBtn) {
 }
 function addFormSubmitListeners(form) {
     form.addEventListener("submit", createNewItem);
+}
+function addDDlisteners(element) {
+    element.addEventListener("dragstart", handleDragStart);
+    element.addEventListener("dragover", handleDragOver);
+    element.addEventListener("drop", handleDrop);
+    element.addEventListener("dragend", handleDragEnd);
 }
 function handleContainerDelete(event) {
     const btn = event.currentTarget;
@@ -83,6 +90,7 @@ function createNewItem(event) {
     const item = actualUL.lastElementChild;
     const liBtn = item.querySelector("button");
     handleAddItemDeletion(liBtn);
+    addDDlisteners(item);
     actualTextInput.value = "";
 }
 function handleAddItemDeletion(btn) {
@@ -90,6 +98,31 @@ function handleAddItemDeletion(btn) {
         const elToRemove = btn.parentElement;
         elToRemove.remove();
     });
+}
+/// Drag and DroP
+let dragSrcEl;
+function handleDragStart(event) {
+    event.stopPropagation();
+    if (actualContainer)
+        toggleForm(actualBtn, actualForm, false);
+    dragSrcEl = this;
+    event.dataTransfer?.setData("text/html", this.outerHTML);
+}
+function handleDragOver(event) {
+    event.preventDefault();
+}
+function handleDrop(event) {
+    event.stopPropagation();
+    const receptionEl = this;
+    if (dragSrcEl.nodeName === "LI" &&
+        receptionEl.classList.contains("items-container")) {
+        receptionEl.querySelector("ul").appendChild(dragSrcEl);
+        addDDlisteners(dragSrcEl);
+        handleAddItemDeletion(dragSrcEl.querySelector("button"));
+    }
+}
+function handleDragEnd() {
+    dragSrcEl = null;
 }
 /// Add New Container
 const addContainerBtn = document.querySelector(".add-container-btn");

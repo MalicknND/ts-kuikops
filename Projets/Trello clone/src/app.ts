@@ -25,6 +25,7 @@ function addContainerListerner(currentContainer: HTMLDivElement) {
   addItemBtnListeners(currentAddItemBtn);
   closingFormBtnListeners(currentCloseFormBtn);
   addFormSubmitListeners(currentForm);
+  addDDlisteners(currentContainer);
 }
 
 itemsContainer.forEach((container: HTMLDivElement) => {
@@ -46,6 +47,13 @@ function closingFormBtnListeners(closeFormBtn: HTMLButtonElement) {
 
 function addFormSubmitListeners(form: HTMLFormElement) {
   form.addEventListener("submit", createNewItem);
+}
+
+function addDDlisteners(element: HTMLElement) {
+  element.addEventListener("dragstart", handleDragStart);
+  element.addEventListener("dragover", handleDragOver);
+  element.addEventListener("drop", handleDrop);
+  element.addEventListener("dragend", handleDragEnd);
 }
 
 function handleContainerDelete(event: MouseEvent) {
@@ -114,6 +122,7 @@ function createNewItem(event: Event) {
   const item = actualUL.lastElementChild as HTMLLIElement;
   const liBtn = item.querySelector("button") as HTMLButtonElement;
   handleAddItemDeletion(liBtn);
+  addDDlisteners(item);
   actualTextInput.value = "";
 }
 
@@ -122,6 +131,42 @@ function handleAddItemDeletion(btn: HTMLButtonElement) {
     const elToRemove = btn.parentElement as HTMLLIElement;
     elToRemove.remove();
   });
+}
+
+/// Drag and DroP
+
+let dragSrcEl: HTMLElement;
+
+function handleDragStart(this: HTMLElement, event: DragEvent) {
+  event.stopPropagation();
+  if (actualContainer) toggleForm(actualBtn, actualForm, false);
+  dragSrcEl = this;
+  event.dataTransfer?.setData("text/html", this.outerHTML);
+}
+
+function handleDragOver(event: DragEvent) {
+  event.preventDefault();
+}
+
+function handleDrop(this: HTMLElement, event: DragEvent) {
+  event.stopPropagation();
+  const receptionEl = this;
+  if (
+    dragSrcEl.nodeName === "LI" &&
+    receptionEl.classList.contains("items-container")
+  ) {
+    (receptionEl.querySelector("ul") as HTMLUListElement).appendChild(
+      dragSrcEl,
+    );
+    addDDlisteners(dragSrcEl);
+    handleAddItemDeletion(
+      dragSrcEl.querySelector("button") as HTMLButtonElement,
+    );
+  }
+}
+
+function handleDragEnd() {
+  dragSrcEl = null as unknown as HTMLLIElement;
 }
 
 /// Add New Container
