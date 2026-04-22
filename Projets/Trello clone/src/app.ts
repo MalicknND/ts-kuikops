@@ -9,7 +9,7 @@ let actualContainer: HTMLDivElement,
   actualTextInput: HTMLInputElement,
   actualValidation: HTMLSpanElement;
 
-function addContainerListerner(currentContainer: HTMLDivElement) {
+function addContainerListeners(currentContainer: HTMLDivElement) {
   const currentContainerDeletionBtn = currentContainer.querySelector(
     ".delete-container-btn",
   ) as HTMLButtonElement;
@@ -25,39 +25,34 @@ function addContainerListerner(currentContainer: HTMLDivElement) {
   addItemBtnListeners(currentAddItemBtn);
   closingFormBtnListeners(currentCloseFormBtn);
   addFormSubmitListeners(currentForm);
-  addDDlisteners(currentContainer);
+  addDDListeners(currentContainer);
 }
 
 itemsContainer.forEach((container: HTMLDivElement) => {
-  addContainerListerner(container);
+  addContainerListeners(container);
 });
-function deleteBtnListeners(deleteBtn: HTMLButtonElement) {
-  deleteBtn.addEventListener("click", handleContainerDelete);
-}
 
-function addItemBtnListeners(addItemBtn: HTMLButtonElement) {
-  addItemBtn.addEventListener("click", handleAddItem);
+function deleteBtnListeners(btn: HTMLButtonElement) {
+  btn.addEventListener("click", handleContainerDeletion);
 }
-
-function closingFormBtnListeners(closeFormBtn: HTMLButtonElement) {
-  closeFormBtn.addEventListener("click", () =>
-    toggleForm(actualBtn, actualForm, false),
-  );
+function addItemBtnListeners(btn: HTMLButtonElement) {
+  btn.addEventListener("click", handleAddItem);
 }
-
+function closingFormBtnListeners(btn: HTMLButtonElement) {
+  btn.addEventListener("click", () => toggleForm(actualBtn, actualForm, false));
+}
 function addFormSubmitListeners(form: HTMLFormElement) {
   form.addEventListener("submit", createNewItem);
 }
-
-function addDDlisteners(element: HTMLElement) {
+function addDDListeners(element: HTMLElement) {
   element.addEventListener("dragstart", handleDragStart);
   element.addEventListener("dragover", handleDragOver);
   element.addEventListener("drop", handleDrop);
   element.addEventListener("dragend", handleDragEnd);
 }
 
-function handleContainerDelete(event: MouseEvent) {
-  const btn = event.currentTarget as HTMLButtonElement;
+function handleContainerDeletion(e: MouseEvent) {
+  const btn = e.target as HTMLButtonElement;
   const btnsArray = [
     ...document.querySelectorAll(".delete-container-btn"),
   ] as HTMLButtonElement[];
@@ -67,9 +62,9 @@ function handleContainerDelete(event: MouseEvent) {
   containers[btnsArray.indexOf(btn)]?.remove();
 }
 
-function handleAddItem(event: MouseEvent) {
+function handleAddItem(e: MouseEvent) {
+  const btn = e.target as HTMLButtonElement;
   if (actualContainer) toggleForm(actualBtn, actualForm, false);
-  const btn = event.currentTarget as HTMLButtonElement;
   setContainerItems(btn);
   toggleForm(actualBtn, actualForm, true);
 }
@@ -77,7 +72,7 @@ function handleAddItem(event: MouseEvent) {
 function toggleForm(
   btn: HTMLButtonElement,
   form: HTMLFormElement,
-  action: boolean,
+  action: Boolean,
 ) {
   if (!action) {
     form.style.display = "none";
@@ -99,9 +94,8 @@ function setContainerItems(btn: HTMLButtonElement) {
   ) as HTMLSpanElement;
 }
 
-function createNewItem(event: Event) {
-  event.preventDefault();
-
+function createNewItem(e: Event) {
+  e.preventDefault();
   // Validation
   if (actualTextInput.value.length === 0) {
     actualValidation.textContent = "Must be at least 1 character long";
@@ -109,48 +103,45 @@ function createNewItem(event: Event) {
   } else {
     actualValidation.textContent = "";
   }
-  // Create new item
+  // Création Item
   const itemContent = actualTextInput.value;
-  const li = `
-  <li class="item" draggable="true">
+  const li = `<li class="item" draggable="true">
     <p>${itemContent}</p>
-    <button class="delete-item-btn">X</button>
-  </li>
-  `;
-  // Insert new item in the DOM
+    <button>X</button>
+    </li>`;
   actualUL.insertAdjacentHTML("beforeend", li);
+
   const item = actualUL.lastElementChild as HTMLLIElement;
   const liBtn = item.querySelector("button") as HTMLButtonElement;
-  handleAddItemDeletion(liBtn);
-  addDDlisteners(item);
+  handleItemDeletion(liBtn);
+  addDDListeners(item);
   actualTextInput.value = "";
 }
 
-function handleAddItemDeletion(btn: HTMLButtonElement) {
+function handleItemDeletion(btn: HTMLButtonElement) {
   btn.addEventListener("click", () => {
     const elToRemove = btn.parentElement as HTMLLIElement;
     elToRemove.remove();
   });
 }
 
-/// Drag and DroP
+// Drag And Drop
 
 let dragSrcEl: HTMLElement;
+function handleDragStart(this: HTMLElement, e: DragEvent) {
+  e.stopPropagation();
 
-function handleDragStart(this: HTMLElement, event: DragEvent) {
-  event.stopPropagation();
   if (actualContainer) toggleForm(actualBtn, actualForm, false);
   dragSrcEl = this;
-  event.dataTransfer?.setData("text/html", this.outerHTML);
+  e.dataTransfer?.setData("text/html", this.innerHTML);
 }
-
-function handleDragOver(event: DragEvent) {
-  event.preventDefault();
+function handleDragOver(e: DragEvent) {
+  e.preventDefault();
 }
-
-function handleDrop(this: HTMLElement, event: DragEvent) {
-  event.stopPropagation();
+function handleDrop(this: HTMLElement, e: DragEvent) {
+  e.stopPropagation();
   const receptionEl = this;
+
   if (
     dragSrcEl.nodeName === "LI" &&
     receptionEl.classList.contains("items-container")
@@ -158,18 +149,43 @@ function handleDrop(this: HTMLElement, event: DragEvent) {
     (receptionEl.querySelector("ul") as HTMLUListElement).appendChild(
       dragSrcEl,
     );
-    addDDlisteners(dragSrcEl);
-    handleAddItemDeletion(
-      dragSrcEl.querySelector("button") as HTMLButtonElement,
-    );
+    addDDListeners(dragSrcEl);
+    handleItemDeletion(dragSrcEl.querySelector("button") as HTMLButtonElement);
+  }
+
+  if (dragSrcEl !== this && this.classList[0] === dragSrcEl.classList[0]) {
+    dragSrcEl.innerHTML = this.innerHTML;
+    this.innerHTML = e.dataTransfer?.getData("text/html") as string;
+    if (this.classList.contains("items-container")) {
+      addContainerListeners(this as HTMLDivElement);
+
+      this.querySelectorAll("li").forEach((li: HTMLLIElement) => {
+        handleItemDeletion(li.querySelector("button") as HTMLButtonElement);
+        addDDListeners(li);
+      });
+    } else {
+      addDDListeners(this);
+      handleItemDeletion(this.querySelector("button") as HTMLButtonElement);
+    }
   }
 }
 
-function handleDragEnd() {
-  dragSrcEl = null as unknown as HTMLLIElement;
+function handleDragEnd(this: HTMLElement, e: DragEvent) {
+  e.stopPropagation();
+  if (this.classList.contains("items-container")) {
+    addContainerListeners(this as HTMLDivElement);
+    if (this.querySelectorAll("li")) {
+      this.querySelectorAll("li").forEach((li: HTMLLIElement) => {
+        handleItemDeletion(li.querySelector("button") as HTMLButtonElement);
+        addDDListeners(li);
+      });
+    }
+  } else {
+    addDDListeners(this);
+  }
 }
 
-/// Add New Container
+// Add New Container
 
 const addContainerBtn = document.querySelector(
   ".add-container-btn",
@@ -199,42 +215,40 @@ addContainerBtn.addEventListener("click", () => {
 addContainerCloseBtn.addEventListener("click", () => {
   toggleForm(addContainerBtn, addContainerForm, false);
 });
-
 addContainerForm.addEventListener("submit", createNewContainer);
 
-function createNewContainer(event: Event) {
-  event.preventDefault();
+function createNewContainer(e: Event) {
+  e.preventDefault();
   if (addContainerFormInput.value.length === 0) {
     validationNewContainer.textContent = "Must be at least 1 character long";
     return;
   } else {
     validationNewContainer.textContent = "";
   }
+
   const itemsContainer = document.querySelector(
     ".items-container",
   ) as HTMLDivElement;
-  const newContainer = itemsContainer.cloneNode(true) as HTMLDivElement;
+  const newContainer = itemsContainer.cloneNode() as HTMLDivElement;
+
   const newContainerContent = `
-         
-        <div class="top-container">
-          <h2>${addContainerFormInput.value}</h2>
-          <button class="delete-container-btn">X</button>
-        </div>
-        <ul></ul>
-        <button class="add-item-btn">Add an item</button>
-        <form autocomplete="off">
-          <div class="top-form-container">
-            <label for="item">Add a new item</label>
-            <button type="button" class="close-form-btn">X</button>
-          </div>
-          <input type="text" id="item" />
-          <span class="validation-msg"></span>
-          <button type="submit">Submit</button>
-        </form>
-      
-  `;
+    <div class="top-container">
+      <h2>${addContainerFormInput.value}</h2>
+      <button class="delete-container-btn">X</button>
+    </div>
+    <ul></ul>
+    <button class="add-item-btn">Add an item</button>
+    <form autocomplete="off">
+      <div class="top-form-container">
+        <label for="item">Add a new item</label>
+        <button type="button" class="close-form-btn">X</button>
+      </div>
+      <input type="text" id="item" />
+      <span class="validation-msg"></span>
+      <button type="submit">Submit</button>
+    </form>`;
   newContainer.innerHTML = newContainerContent;
   containersList.insertBefore(newContainer, addNewContainer);
   addContainerFormInput.value = "";
-  addContainerListerner(newContainer);
+  addContainerListeners(newContainer);
 }
